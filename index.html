@@ -3,35 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WOWATE - Web Open source AADL Tool Environment</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>WOSATE Workbench</title>
+    <meta name="description" content="Browser-based AADL tool environment with AGREE verification and plug-ins." />
+    <!-- Enables cross-origin isolation (needed by Z3's threaded WebAssembly) on static hosts such as GitHub Pages. -->
+    <script src="coi-serviceworker.js"></script>
   </head>
   <body>
-    <header>
-      <h1>WOWATE</h1>
-      <p>Web Open source AADL Tool Environment with AGREE-focused checks</p>
-    </header>
-
-    <main>
-      <section class="panel">
-        <h2>AADL / AGREE Model</h2>
-        <textarea id="editor" spellcheck="false"></textarea>
-        <div class="actions">
-          <button id="load-sample" type="button">Load Sample</button>
-          <button id="analyze" type="button">Analyze</button>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Diagnostics</h2>
-        <ul id="diagnostics"></ul>
-      </section>
-    </main>
-
-    <footer>
-      <small>Static client-side app designed for GitHub Pages hosting.</small>
-    </footer>
-
-    <script src="./app.js" defer></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

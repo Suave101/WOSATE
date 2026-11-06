@@ -1,0 +1,46 @@
+name: WOSATE AADL check
+description: Validate AADL models and run WOSATE analyses (flow latency, budgets, schedulability, EMV2, Resolute, AGREE) on pull requests.
+branding:
+  icon: check-square
+  color: blue
+
+inputs:
+  paths:
+    description: Files or folders containing .aadl models (space-separated).
+    default: "."
+  analyses:
+    description: Comma-separated analysis keys to run (see `node tools/wosate.mjs list`). Leave empty to only check the model.
+    default: ""
+  target:
+    description: Component implementation the analyses instantiate, e.g. Pkg::System.impl.
+    default: ""
+  fail-on:
+    description: Fail the job when an analysis reports this level or worse (error or warning).
+    default: error
+  out:
+    description: Folder for generated files (code, reports, ARINC 653 XML). Empty to skip.
+    default: ""
+  agree:
+    description: Install the Z3 solver so AGREE analyses can run (true / false).
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Install Z3 for AGREE
+      if: inputs.agree == 'true'
+      shell: bash
+      run: npm install --prefix "$GITHUB_ACTION_PATH" --no-save --ignore-scripts z3-solver@4.13.0
+    - name: Check AADL models
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/tools/wosate.mjs" check ${{ inputs.paths }} --format github
+    - name: Run analyses
+      if: inputs.analyses != ''
+      shell: bash
+      run: >
+        node "$GITHUB_ACTION_PATH/tools/wosate.mjs" analyze "${{ inputs.analyses }}" ${{ inputs.paths }}
+        --target "${{ inputs.target }}" --fail-on "${{ inputs.fail-on }}" --format github
+        ${{ inputs.out != '' && format('--out "{0}"', inputs.out) || '' }}

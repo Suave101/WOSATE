@@ -1,0 +1,26 @@
+# Example: run WOSATE on every pull request in a repository that holds AADL models.
+# Copy this file to .github/workflows/aadl-check.yml in that repository.
+name: AADL check
+
+on:
+  pull_request:
+    paths: ["**/*.aadl"]
+  workflow_dispatch:
+
+jobs:
+  aadl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Suave101/WOWATE@main
+        with:
+          paths: models
+          target: Flight_Computer::FCS.impl
+          analyses: schedulability:rta,resource-budgets:processor-load,resource-budgets:bus-load,flow-latency:flow-latency
+          fail-on: error
+          out: wosate-out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wosate-reports
+          path: wosate-out
