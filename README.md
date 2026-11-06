@@ -102,7 +102,7 @@ node tools/wosate.mjs lsp --stdio                                   # language s
 On GitHub the CLI writes `::error` annotations and a job summary. To use it from another repository:
 
 ```yaml
-- uses: Suave101/WOWATE@main
+- uses: Suave101/WOSATE@main
   with:
     paths: models
     target: Pkg::System.impl

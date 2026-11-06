@@ -800,7 +800,7 @@ export default function App() {
           </span>
           <span className="status-item hide-narrow" title="Model build time">{`${model.packages.size} packages · ${buildMs.toFixed(0)} ms`}</span>
           <span className="status-item hide-narrow">AADL</span>
-          <a className="status-item" href="https://github.com/Suave101/WOWATE" target="_blank" rel="noopener noreferrer" title="Source on GitHub"><Icon name="github" /></a>
+          <a className="status-item" href="https://github.com/Suave101/WOSATE" target="_blank" rel="noopener noreferrer" title="Source on GitHub"><Icon name="github" /></a>
         </div>
       </footer>
 
