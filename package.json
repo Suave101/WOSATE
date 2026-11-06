@@ -4,7 +4,9 @@
   "description": "WOSATE: a browser-based AADL tool environment (OSATE-style) with AGREE verification and a plug-in API",
   "private": true,
   "type": "module",
-  "bin": { "wosate": "tools/wosate.mjs" },
+  "bin": {
+    "wosate": "tools/wosate.mjs"
+  },
   "scripts": {
     "wosate": "node tools/wosate.mjs",
     "build:vendor": "node tools/build-vendor.mjs",
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.2.1",
+    "axe-core": "^4.10.2",
     "coi-serviceworker": "0.1.7",
     "vite": "^8.3.6",
     "z3-solver": "4.13.0"

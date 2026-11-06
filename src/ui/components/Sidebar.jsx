@@ -39,17 +39,25 @@ export function IconButton({ icon, title, onClick, className = "" }) {
   );
 }
 
-function Row({ depth = 0, icon, iconClass, label, desc, active, title, onActivate, children }) {
+/**
+ * A list row. Rows inside a `role="tree"` are tree items; action rows elsewhere are buttons
+ * and label-only rows are headings, so assistive technology reads each correctly.
+ */
+function Row({ depth = 0, icon, iconClass, label, desc, active, title, onActivate, role = "treeitem", children }) {
+  const interactive = !!onActivate;
+  const ariaRole = interactive ? role : "heading";
   return (
     <div
       className={`row${active ? " active" : ""}`}
-      role="treeitem"
-      aria-selected={!!active}
-      tabIndex={0}
+      role={ariaRole}
+      aria-level={ariaRole === "heading" ? 2 : undefined}
+      aria-selected={ariaRole === "treeitem" ? !!active : undefined}
+      aria-description={interactive && title && role === "button" ? title : undefined}
+      tabIndex={interactive ? 0 : undefined}
       title={title}
       style={{ paddingLeft: 8 + depth * 12 }}
       onClick={onActivate}
-      onKeyDown={(e) => e.key === "Enter" && onActivate?.()}
+      onKeyDown={(e) => (e.key === "Enter" || (e.key === " " && role === "button")) && (e.preventDefault(), onActivate?.())}
     >
       {icon ? <Icon name={icon} className={iconClass} /> : null}
       <span className="label">{label}</span>
@@ -167,7 +175,7 @@ export function AnalysesView({ analyses, impls, target, onTarget, onRun, example
           <div key={plugin}>
             <Row depth={0} icon="extensions" label={plugin} />
             {list.map((a) => (
-              <Row key={a.key} depth={1} icon={busy ? "loading" : "play"} iconClass={busy ? "spin" : "sev-ok"} label={a.label} title={a.description} onActivate={() => onRun(a)} />
+              <Row key={a.key} role="button" depth={1} icon={busy ? "loading" : "play"} iconClass={busy ? "spin" : "sev-ok"} label={a.label} title={a.description} onActivate={() => onRun(a)} />
             ))}
           </div>
         ))}
@@ -175,7 +183,7 @@ export function AnalysesView({ analyses, impls, target, onTarget, onRun, example
       </SideSection>
       <SideSection title="Examples" defaultOpen={false}>
         {examples.map((ex) => (
-          <Row key={ex.id} depth={1} icon="book" label={ex.name} title={ex.description} onActivate={() => onExample(ex)} />
+          <Row key={ex.id} role="button" depth={1} icon="book" label={ex.name} title={ex.description} onActivate={() => onExample(ex)} />
         ))}
       </SideSection>
     </>
@@ -184,7 +192,7 @@ export function AnalysesView({ analyses, impls, target, onTarget, onRun, example
 
 // ---- Extensions ------------------------------------------------------------------------------
 
-const EXT_COLORS = ["#007acc", "#16825d", "#a074c4", "#c27d1a", "#c74e39", "#3c8fa8"];
+const EXT_COLORS = ["#770000", "#0e7490", "#7c3aed", "#a16207", "#047857", "#9f1239"];
 
 function initials(name) {
   return name.split(/[\s&:-]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");

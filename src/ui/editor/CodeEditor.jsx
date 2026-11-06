@@ -74,7 +74,10 @@ export default function CodeEditor({ file, client, collab, onChange, annexKeywor
       keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
       indentUnit.of("  "), EditorState.tabSize.of(2),
       language, aadlHighlighting, aadlIndentation, theme,
-      EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly),
+      // Read-only files stay focusable (EditorState.readOnly blocks edits) so keyboard and
+      // screen-reader users can still move through and scroll them.
+      EditorState.readOnly.of(readOnly),
+      EditorView.contentAttributes.of({ tabindex: "0", "aria-label": name ? `${name}${readOnly ? " (read-only)" : ""}, AADL source` : "No file open" }),
       name ? lspExtensions({
         client,
         name,

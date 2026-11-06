@@ -204,7 +204,7 @@ function buildGraph(model, impl, layout, diagnostics) {
 
 // ---- canvas ---------------------------------------------------------------------------------------
 
-function Canvas({ model, qname, getText, onEditFile, onOpenImpl, onNavigate, onRename, diagnostics }) {
+function Canvas({ model, qname, getText, onEditFile, onOpenImpl, onNavigate, onRename, diagnostics, colorMode = "dark" }) {
   const impl = model.findByQualifiedName(qname);
   const pkg = impl ? model.findPackage(impl.pkg) : null;
   const flow = useReactFlow();
@@ -333,7 +333,6 @@ function Canvas({ model, qname, getText, onEditFile, onOpenImpl, onNavigate, onR
   // Development aid for inspecting and driving the canvas from the console / browser tests.
   if (import.meta.env.DEV) window.__wosateDiagram = { nodes, edges, graph, flow, onConnect, deleteSelection, addFromPalette, palette };
   const shown = palette.filter((p) => !paletteFilter || p.label.toLowerCase().includes(paletteFilter.toLowerCase()));
-  const colorMode = window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
 
   return (
     <div className="diagram">

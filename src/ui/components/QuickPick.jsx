@@ -21,6 +21,11 @@ export function QuickPick({ items, placeholder, onClose }) {
   }, [items, query]);
 
   useEffect(() => setSel(0), [query]);
+  // Return focus to whatever was focused before the picker opened.
+  useEffect(() => {
+    const previous = document.activeElement;
+    return () => previous?.focus?.();
+  }, []);
   useEffect(() => {
     listRef.current?.children[sel]?.scrollIntoView({ block: "nearest" });
   }, [sel]);
@@ -49,13 +54,17 @@ export function QuickPick({ items, placeholder, onClose }) {
   return (
     <>
       <div className="quickpick-backdrop" onMouseDown={onClose} />
-      <div className="quickpick" role="dialog" aria-label={placeholder}>
+      <div className="quickpick" role="dialog" aria-modal="true" aria-label={placeholder}>
+        <span className="sr-only" role="status" aria-live="polite">{filtered.length ? `${filtered.length} result${filtered.length === 1 ? "" : "s"}` : "No matching results"}</span>
         <input
           type="text"
           autoFocus
           value={query}
           placeholder={placeholder}
           aria-label={placeholder}
+          role="combobox"
+          aria-expanded="true"
+          aria-autocomplete="list"
           aria-controls="quickpick-list"
           aria-activedescendant={filtered[sel] ? `qp-${sel}` : undefined}
           onChange={(e) => setQuery(e.target.value)}

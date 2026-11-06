@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" width="300" height="64" role="img" aria-label="WOSATE">
+  <title>WOSATE</title>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="#770000"/>
+  <rect x="10" y="14" width="44" height="36" rx="3" fill="none" stroke="#fff" stroke-width="2.5"/>
+  <rect x="15" y="25" width="12" height="14" rx="2" fill="#fff"/>
+  <rect x="37" y="25" width="12" height="14" rx="2" fill="#fff"/>
+  <path d="M27 32h7" stroke="#00F0FF" stroke-width="2.5"/>
+  <path d="M33 28.5l4 3.5-4 3.5z" fill="#00F0FF"/>
+  <rect x="7" y="29" width="6" height="6" fill="#00F0FF"/>
+  <rect x="51" y="29" width="6" height="6" fill="#00F0FF"/>
+  <text x="78" y="43" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="32" font-weight="600" letter-spacing="3" fill="#770000">WOSATE</text>
+</svg>

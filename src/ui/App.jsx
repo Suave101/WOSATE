@@ -16,6 +16,7 @@ import { LspClient, nameOf } from "./editor/lspClient.js";
 import { AnalysisWorker } from "./analysisWorker.js";
 import { Collaboration, randomRoom } from "./collab.js";
 import { FolderSync, folderSupported, pickFolder, rememberFolder, recallFolder, folderPermission } from "./folder.js";
+import { readTheme, resolveTheme, applyTheme, THEMES } from "./theme.js";
 import { foldAll, unfoldAll } from "@codemirror/language";
 import { startCompletion } from "@codemirror/autocomplete";
 import { Menu } from "./components/Menu.jsx";
@@ -54,6 +55,34 @@ public
 end ${pkg};
 `;
 
+/** Arrow keys, Home and End move between the tabs of a tablist and activate them. */
+function onTabListKey(e) {
+  const tabs = [...e.currentTarget.querySelectorAll('[role="tab"]')];
+  const i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+  if (next === undefined) return;
+  e.preventDefault();
+  const tab = tabs[(next + tabs.length) % tabs.length];
+  tab.focus();
+  tab.click();
+}
+
+/** Sun (light), moon (dark) or half-filled circle (match system), 16px. */
+function ThemeIcon({ theme }) {
+  if (theme === "auto") return <Icon name="color-mode" />;
+  return theme === "light" ? (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1" />
+    </svg>
+  ) : (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+      <path d="M13.2 10.1A5.6 5.6 0 0 1 5.9 2.8a5.6 5.6 0 1 0 7.3 7.3z" />
+    </svg>
+  );
+}
+
 async function readFiles(fileList) {
   return Promise.all([...fileList].map(async (f) => ({ name: f.name, text: await f.text() })));
 }
@@ -73,6 +102,13 @@ export default function App() {
   const [peers, setPeers] = useState(0);
   const [folder, setFolder] = useState(null);
   const [folderToReconnect, setFolderToReconnect] = useState(null);
+  const [theme, setTheme] = useState(readTheme);
+  // Re-render when the system theme flips while following it.
+  const [, setSystemTick] = useState(0);
+  useEffect(() => applyTheme(theme, () => setSystemTick((n) => n + 1)), [theme]);
+  const resolvedTheme = resolveTheme(theme);
+  const THEME_LABEL = { dark: "Dark", light: "Light", auto: "Match system" };
+  const nextTheme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
   const editorRef = useRef(null);
   const fileInput = useRef(null);
   const workspaceInput = useRef(null);
@@ -473,6 +509,7 @@ export default function App() {
     { id: "view.extensions", kind: "View", label: "Show Extensions", icon: "extensions", run: () => { setView("extensions"); setSidebarVisible(true); } },
     { id: "view.sidebar", kind: "View", label: "Toggle Primary Side Bar Visibility", detail: "Ctrl+B", icon: "layout-sidebar-left", run: () => setSidebarVisible((v) => !v) },
     { id: "view.panel", kind: "View", label: "Toggle Panel Visibility", detail: "Ctrl+J", icon: "layout-panel", run: () => setPanelVisible((v) => !v) },
+    ...THEMES.map((t) => ({ id: `theme.${t}`, kind: "Theme", label: `Color Theme: ${THEME_LABEL[t]}`, detail: t === theme ? "current" : "", icon: "color-mode", run: () => setTheme(t) })),
     { id: "collab.share", kind: "Live Share", label: collab ? "Copy Session Link" : "Start Live Session and Copy Link…", icon: "live-share", run: shareSession },
     { id: "collab.join", kind: "Live Share", label: "Join Live Session…", icon: "plug", run: joinSession },
     ...(collab ? [{ id: "collab.leave", kind: "Live Share", label: "Leave Live Session", icon: "debug-disconnect", run: leaveSession }] : []),
@@ -567,9 +604,11 @@ export default function App() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#editor-area" onClick={(e) => { e.preventDefault(); editorRef.current?.view?.focus(); }}>Skip to editor</a>
       <header className="titlebar">
+        <h1 className="sr-only">WOSATE Workbench</h1>
         <div className="titlebar-left">
-          <span className="app-icon" title="WOSATE"><Icon name="symbol-structure" /></span>
+          <span className="app-icon" title="WOSATE"><img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width="18" height="18" /></span>
           <Menu label="File" items={fileMenu} />
           <Menu label="View" items={viewMenu} />
           <Menu label="Analyses" items={analysesMenu} />
@@ -579,7 +618,17 @@ export default function App() {
           <Icon name="search" />
           <span>WOSATE{target ? ` — ${target}` : ""}</span>
         </button>
-        <div />
+        <div className="titlebar-right">
+          <button
+            type="button"
+            className="theme-toggle"
+            title={`Theme: ${THEME_LABEL[theme]} — click for ${THEME_LABEL[nextTheme]}`}
+            aria-label={`Colour theme: ${THEME_LABEL[theme]}. Switch to ${THEME_LABEL[nextTheme]}`}
+            onClick={() => setTheme(nextTheme)}
+          >
+            <ThemeIcon theme={theme} />
+          </button>
+        </div>
       </header>
 
       <div className={`workbench${sidebarVisible ? "" : " no-sidebar"}`}>
@@ -653,19 +702,27 @@ export default function App() {
 
         <main className={`editor-group${panelVisible ? "" : " no-panel"}`}>
           <div className="tabbar">
-            <div className="tabs" role="tablist">
+            <div className="tabs" role="tablist" aria-label="Open editors" onKeyDown={onTabListKey}>
               {ws.open.filter((n) => findFile(n) || isDiagram(n)).map((name) => (
                 <div
                   key={name}
-                  role="tab"
-                  tabIndex={0}
-                  aria-selected={name === ws.active}
+                  role="none"
                   className={`tab ${isDiagram(name) ? "" : fileSeverity(name)}${name === ws.active ? " active" : ""}`}
-                  title={isDiagram(name) ? `Diagram of ${name.slice(8)}` : name}
-                  onClick={() => openFile(name)}
-                  onKeyDown={(e) => e.key === "Enter" && openFile(name)}
                   onAuxClick={(e) => e.button === 1 && dispatch({ type: "close", name })}
                 >
+                  <button
+                    type="button"
+                    role="tab"
+                    className="tab-main"
+                    aria-keyshortcuts="Delete"
+                    onKeyDown={(e) => e.key === "Delete" && (e.preventDefault(), dispatch({ type: "close", name }))}
+                    aria-selected={name === ws.active}
+                    aria-controls="editor-area"
+                    tabIndex={name === ws.active ? 0 : -1}
+                    title={isDiagram(name) ? `Diagram of ${name.slice(8)}` : name}
+                    aria-label={`${isDiagram(name) ? `Diagram of ${name.slice(8)}` : name}${findFile(name)?.readOnly ? ", read-only" : ""}${{ "has-errors": ", has errors", "has-warnings": ", has warnings" }[isDiagram(name) ? "" : fileSeverity(name)] || ""}`}
+                    onClick={() => openFile(name)}
+                  >
                   {isDiagram(name) ? (
                     <>
                       <Icon name="type-hierarchy" className="ico-impl" />
@@ -679,7 +736,8 @@ export default function App() {
                       {findFile(name).readOnly ? <span className="ro">read-only</span> : null}
                     </>
                   )}
-                  <button type="button" className="close" title="Close" aria-label={`Close ${name}`} onClick={(e) => { e.stopPropagation(); dispatch({ type: "close", name }); }}>
+                  </button>
+                  <button type="button" className="close" title="Close (Delete)" aria-hidden="true" tabIndex={-1} onClick={(e) => { e.stopPropagation(); dispatch({ type: "close", name }); }}>
                     <Icon name="close" />
                   </button>
                 </div>
@@ -703,14 +761,14 @@ export default function App() {
               <>
                 <span className="crumb"><Icon name={activeFile.readOnly ? "library" : "file-code"} className={activeFile.readOnly ? "ico-lib" : "ico-file"} />{activeFile.name}</span>
                 {packagesInFile.map((p) => (
-                  <span key={p.name} className="crumb" role="button" tabIndex={0} onClick={() => gotoLocation(p.loc)}>
+                  <span key={p.name} className="crumb" role="button" tabIndex={0} onClick={() => gotoLocation(p.loc)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), gotoLocation(p.loc))}>
                     <Icon name="chevron-right" className="sep" /><Icon name="package" className="ico-pkg" />{p.name}
                   </span>
                 ))}
               </>
             ) : null}
           </div>
-          <div className="editor-area">
+          <div className="editor-area" id="editor-area" role="tabpanel" aria-label={activeDiagram ? `Diagram of ${activeDiagram}` : activeFile ? `Editor: ${activeFile.name}` : "Editor"}>
             <CodeEditor
               ref={editorRef}
               file={activeFile}
@@ -724,6 +782,7 @@ export default function App() {
             />
             {activeDiagram ? (
               <DiagramCanvas
+                colorMode={resolvedTheme}
                 model={model}
                 qname={activeDiagram}
                 diagnostics={model.diagnostics}
@@ -737,7 +796,7 @@ export default function App() {
             {!activeFile && !activeDiagram ? (
               <div className="welcome">
                 <div>
-                  <Icon name="symbol-structure" />
+                  <img className="welcome-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="WOSATE" width="112" height="112" />
                   <dl>
                     <dt>Show All Commands</dt><dd><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd></dd>
                     <dt>Go to File</dt><dd><kbd>Ctrl</kbd>+<kbd>P</kbd></dd>
@@ -749,14 +808,16 @@ export default function App() {
             ) : null}
           </div>
           <section className="panel" aria-label="Panel">
-            <div className="panel-head" role="tablist">
-              <button type="button" role="tab" aria-selected={panel === "problems"} className={`panel-tab${panel === "problems" ? " active" : ""}`} onClick={() => setPanel("problems")}>
-                Problems {counts.error + counts.warning ? <span className="count-badge">{counts.error + counts.warning}</span> : null}
-              </button>
-              <button type="button" role="tab" aria-selected={panel === "results"} className={`panel-tab${panel === "results" ? " active" : ""}`} onClick={() => setPanel("results")}>
-                Analysis Results {results.length ? <span className="count-badge">{results.length}</span> : null}
-              </button>
-              <span className="panel-status">
+            <div className="panel-head">
+              <div className="panel-tabs" role="tablist" aria-label="Panel views" onKeyDown={onTabListKey}>
+                <button type="button" role="tab" id="tab-problems" aria-controls="panel-body" tabIndex={panel === "problems" ? 0 : -1} aria-selected={panel === "problems"} className={`panel-tab${panel === "problems" ? " active" : ""}`} onClick={() => setPanel("problems")}>
+                  Problems {counts.error + counts.warning ? <span className="count-badge" aria-label={`${counts.error + counts.warning} problems`}>{counts.error + counts.warning}</span> : null}
+                </button>
+                <button type="button" role="tab" id="tab-results" aria-controls="panel-body" tabIndex={panel === "results" ? 0 : -1} aria-selected={panel === "results"} className={`panel-tab${panel === "results" ? " active" : ""}`} onClick={() => setPanel("results")}>
+                  Analysis Results {results.length ? <span className="count-badge" aria-label={`${results.length} results`}>{results.length}</span> : null}
+                </button>
+              </div>
+              <span className="panel-status" role="status" aria-live="polite">
                 {status.busy ? <Icon name="loading" className="spin" /> : null}
                 {status.text}
                 {status.busy ? <IconButton icon="debug-stop" title="Cancel analysis" onClick={() => analysisWorker.cancel()} /> : null}
@@ -766,7 +827,7 @@ export default function App() {
                 <IconButton icon="close" title="Close Panel" onClick={() => setPanelVisible(false)} />
               </span>
             </div>
-            <div className="panel-body">
+            <div className="panel-body" id="panel-body" role="tabpanel" aria-labelledby={panel === "problems" ? "tab-problems" : "tab-results"} tabIndex={0}>
               {panel === "problems"
                 ? <ProblemsView diagnostics={model.diagnostics} onLocation={gotoLocation} />
                 : <ResultsView entries={results} onLocation={gotoLocation} />}

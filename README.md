@@ -1,5 +1,7 @@
-# WOSATE
-Web Open Source AADL Tool Environment
+<p align="center"><img src="public/logo.svg" width="112" alt="WOSATE logo"></p>
+
+<h1 align="center">WOSATE</h1>
+<p align="center">Web Open Source AADL Tool Environment<br><a href="https://suave101.github.io/WOSATE/">Open the workbench</a> · built with the <a href="https://assist-research-lab.github.io/">ASSIST Lab</a> at Florida Tech</p>
 
 WOSATE is an OSATE-style AADL workbench that runs entirely in the browser and deploys to GitHub Pages as a static site. It needs no backend, Java or Eclipse. It parses and checks textual AADL with a real language server, draws editable architecture diagrams, and runs analysis plug-ins: AGREE proofs on Z3 (WebAssembly), EMV2 safety analysis, the Behavior Annex, BLESS, Resolute, latency, budgets and schedulability. It also generates code and ARINC 653 configurations. The same engine runs headless in CI.
 

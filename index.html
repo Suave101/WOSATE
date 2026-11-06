@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WOSATE Workbench</title>
     <meta name="description" content="Browser-based AADL tool environment with AGREE verification and plug-ins." />
+    <meta name="theme-color" content="#770000" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <script>
+      // Apply the saved colour theme before anything renders (see src/ui/theme.js).
+      try {
+        var t = localStorage.getItem("wosate:theme") || "light";
+        if (t === "auto") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.theme = t;
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
     <!-- Enables cross-origin isolation (needed by Z3's threaded WebAssembly) on static hosts such as GitHub Pages. -->
     <script src="coi-serviceworker.js"></script>
   </head>
